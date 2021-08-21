@@ -155,8 +155,8 @@ def process_screenshot(image):
     w = image.width
 
     # Crop and filter
-    position_image = ImageOps.invert(image.crop((0, 0, w / 3, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB'))
-    hint_image = image.crop((2 * w / 3, 0, w, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB')
+    position_image = ImageOps.invert(image.crop((0, 0, w / 4, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB'))
+    hint_image = image.crop((3 * w / 4, 0, w, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB')
 
     # position_image.save('./test-images/pos.png')
     # hint_image.save('./test-images/hint.png')
