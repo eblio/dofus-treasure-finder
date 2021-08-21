@@ -8,6 +8,7 @@ APP_NAME = 'Dofus treasure finder'
 class App(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+        self.wm_attributes("-topmost", 1)
         self.create_widgets()
 
     def create_widgets(self):
