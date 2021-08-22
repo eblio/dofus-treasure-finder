@@ -21,8 +21,8 @@ DOFUS_TEXT = '- Dofus'
 REQUEST_FORMAT = 'https://dofus-map.com/huntTool/getData.php?x={}&y={}&direction={}&world=0&language=fr'
 DIRECTIONS = ['top', 'bottom', 'left', 'right']
 DIRECTIONS_SIGLE = {'top': '^', 'bottom': 'v', 'left': '<', 'right': '>'}
-FROM_FORMAT = 'depuis {},{}'
-TO_FORMAT = '{} = {} à {} case en {},{}'
+FROM_FORMAT = 'Depuis [{},{}]'
+TO_FORMAT = '{} à {} case en [{},{}]'
 RATIO_TRESHOLD = 60
 INTENSITY_TRESHOLD = 120
 
