@@ -2,9 +2,9 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import api
 import sys
-from PIL import ImageTk
+import uuid
 
-APP_NAME = 'Dofus treasure finder'
+APP_NAME = str(uuid.uuid4()) # Whatever
 START_BUTTON_TEXT = 'Démarrer'
 RESULT_FRAME_TEST = 'Résultat'
 NOTHING_HERE = 'Rien par là'
@@ -13,11 +13,12 @@ class App(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         self.wm_attributes("-topmost", 1)
+        self.iconphoto(False, tk.PhotoImage(file=r'.\assets\icon.png'))
         self.arrow_images = {
-            'top': ImageTk.PhotoImage(file=r'.\assets\arrow_top.png'),
-            'bottom': ImageTk.PhotoImage(file=r'.\assets\arrow_bottom.png'),
-            'left': ImageTk.PhotoImage(file=r'.\assets\arrow_left.png'),
-            'right': ImageTk.PhotoImage(file=r'.\assets\arrow_right.png')
+            'top': tk.PhotoImage(file=r'.\assets\arrow_top.png'),
+            'bottom': tk.PhotoImage(file=r'.\assets\arrow_bottom.png'),
+            'left': tk.PhotoImage(file=r'.\assets\arrow_left.png'),
+            'right': tk.PhotoImage(file=r'.\assets\arrow_right.png')
         }
         self.create_widgets()
 
