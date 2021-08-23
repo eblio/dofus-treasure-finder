@@ -130,3 +130,6 @@ dmypy.json
 
 # Testing folder
 test-images/
+
+# Pre-build folder
+tesseract/
