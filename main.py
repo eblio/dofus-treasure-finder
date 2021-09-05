@@ -3,17 +3,20 @@ import tkinter.ttk as ttk
 import api
 import sys
 import uuid
+import time
 
-APP_NAME = str(uuid.uuid4()) # Whatever
+APP_NAME = str(uuid.uuid4()) # Whatever ...
 START_BUTTON_TEXT = 'Démarrer'
 RESULT_FRAME_TEST = 'Résultat'
 NOTHING_HERE = 'Rien par là'
+TIME_FORMAT = 'En {:.2f} s'
 
 class App(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         self.wm_attributes("-topmost", 1)
         self.iconphoto(False, tk.PhotoImage(file=r'.\assets\icon.png'))
+        self.geometry('330x270')
         self.arrow_images = {
             'top': tk.PhotoImage(file=r'.\assets\arrow_top.png'),
             'bottom': tk.PhotoImage(file=r'.\assets\arrow_bottom.png'),
@@ -24,8 +27,12 @@ class App(tk.Tk):
 
 
     def create_widgets(self):
+        self.world_select = ttk.Combobox(self)
+        self.world_select['values'] = tuple(api.WORLD_TO_ID.keys())
+        self.world_select.current(0)
         self.start_button = ttk.Button(self, text=START_BUTTON_TEXT, command=self.start)
         self.result_frame = ttk.LabelFrame(self, text=RESULT_FRAME_TEST)
+        self.info_label = ttk.Label(self, text='')
         self.from_label = ttk.Label(self.result_frame, text=api.FROM_FORMAT.format('x', 'y'))
         self.directions_labels = {
             'top': (ttk.Label(self.result_frame, image=self.arrow_images['top']), ttk.Label(self.result_frame, text=NOTHING_HERE)),
@@ -34,8 +41,10 @@ class App(tk.Tk):
             'right': (ttk.Label(self.result_frame, image=self.arrow_images['right']), ttk.Label(self.result_frame, text=NOTHING_HERE))
         }
 
+        self.world_select.pack(pady=5)
         self.start_button.pack()
-        self.result_frame.pack(fill='both', expand='yes')
+        self.result_frame.pack(expand='yes', pady=5)
+        self.info_label.pack(expand='yes')
         self.from_label.grid(row=0, column=0, columnspan=2)
         self.directions_labels['top'][0].grid(row=1, column=0)
         self.directions_labels['top'][1].grid(row=1, column=1)
@@ -53,13 +62,21 @@ class App(tk.Tk):
 
     def change_result(self, direction, text):
         self.directions_labels[direction][1]['text'] = text
+        
+
+    def change_info(self, text):
+        self.info_label['text'] = text
 
 
     def fetch_result(self, window_handler):      
         try:
+            ta = time.perf_counter()
+
             image = api.screenshot_window(window_handler)
             position_image, hint_image = api.process_screenshot(image)
-            x, y, hints = api.find_relevant_data(position_image, hint_image)
+            x, y, hints = api.find_relevant_data(position_image, hint_image, api.WORLD_TO_ID[self.world_select.get()])
+
+            tb = time.perf_counter()
 
             self.change_from(api.FROM_FORMAT.format(x, y))
 
@@ -70,6 +87,8 @@ class App(tk.Tk):
                     self.change_result(direction, api.TO_FORMAT.format(hint['n'], hint['d'], hint['x'], hint['y']))
                 else:
                     self.change_result(direction, NOTHING_HERE)
+
+            self.change_info(TIME_FORMAT.format(tb - ta))
 
         except:
             e = sys.exc_info()
