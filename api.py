@@ -23,11 +23,13 @@ DIRECTIONS = ['top', 'bottom', 'left', 'right']
 DIRECTIONS_SIGLE = {'top': '^', 'bottom': 'v', 'left': '<', 'right': '>'}
 FROM_FORMAT = 'Depuis [{},{}]'
 TO_FORMAT = '{} à {} case en [{},{}]'
-RATIO_TRESHOLD = 60
-INTENSITY_TRESHOLD = 120
+RATIO_TRESHOLD = 80
+INTENSITY_TRESHOLD = 130
+MIN_TEXT_SIZE = 2
 WORLD_TO_ID = {'Monde des Douze': 0, 'Village de la canopée': 2}
 
 black_n_white = lambda x : 255 if x > INTENSITY_TRESHOLD else 0
+sufficient_length = lambda x: len(x) > MIN_TEXT_SIZE
 re_coords = re.compile('(-?[0-9]+,-?[0-9]+)')
 
 ###
@@ -156,7 +158,7 @@ def process_screenshot(image):
     w = image.width
 
     # Crop and filter
-    position_image = ImageOps.invert(image.crop((0, 0, w / 4, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB'))
+    position_image = ImageOps.invert(image.crop((0, 0, w / 4, h / 10)).convert('L').point(black_n_white, mode='1').convert('RGB'))
     hint_image = image.crop((3 * w / 4, 0, w, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB')
 
     # position_image.save('./test-images/pos.png')
@@ -195,7 +197,7 @@ def find_best_hint(hint, hints):
     return best_hint_data
 
 
-def find_relevant_data(position_image, hint_image):
+def find_relevant_data(position_image, hint_image, world):
     '''
     Finds the relevant data (position and hint).
     '''
@@ -205,8 +207,12 @@ def find_relevant_data(position_image, hint_image):
     hint_texts = image_to_text(hint_image).split('\n')
 
     # Filter to get the position
+    pos_texts = list(filter(sufficient_length, pos_texts))
     pos_texts = list(filter(re_coords.match, pos_texts))[0].split(',')
     x, y = int(pos_texts[0]), int(pos_texts[1])
+
+    # Filter to remove garbage data
+    hint_texts = list(filter(sufficient_length, hint_texts))
 
     # Find the best hint in each direction
     best_hints = {}
