@@ -18,13 +18,14 @@ except ImportError:
     import Image
 
 DOFUS_TEXT = '- Dofus'
-REQUEST_FORMAT = 'https://dofus-map.com/huntTool/getData.php?x={}&y={}&direction={}&world=0&language=fr'
+REQUEST_FORMAT = 'https://dofus-map.com/huntTool/getData.php?x={}&y={}&direction={}&world={}&language=fr'
 DIRECTIONS = ['top', 'bottom', 'left', 'right']
 DIRECTIONS_SIGLE = {'top': '^', 'bottom': 'v', 'left': '<', 'right': '>'}
 FROM_FORMAT = 'Depuis [{},{}]'
 TO_FORMAT = '{} à {} case en [{},{}]'
 RATIO_TRESHOLD = 60
 INTENSITY_TRESHOLD = 120
+WORLD_TO_ID = {'Monde des Douze': 0, 'Village de la canopée': 2}
 
 black_n_white = lambda x : 255 if x > INTENSITY_TRESHOLD else 0
 re_coords = re.compile('(-?[0-9]+,-?[0-9]+)')
@@ -164,11 +165,11 @@ def process_screenshot(image):
     return position_image, hint_image
 
 
-def request_hints(x, y, direction):
+def request_hints(x, y, direction, world):
     '''
     Requests the hints through dofus-map and format them.
     '''
-    url = REQUEST_FORMAT.format(x, y, direction)
+    url = REQUEST_FORMAT.format(x, y, direction, world)
     response = requests.get(url, auth=('user', 'pass'))
 
     hints = list(json.loads(response.text)['hints'])
@@ -211,7 +212,7 @@ def find_relevant_data(position_image, hint_image):
     best_hints = {}
 
     for direction in DIRECTIONS:
-        hints = request_hints(x, y, direction)
+        hints = request_hints(x, y, direction, world)
         best_hint = None
 
         for hint_text in hint_texts:
@@ -232,7 +233,7 @@ def process_window(window_handler):
     try:
         image = screenshot_window(window_handler)
         position_image, hint_image = process_screenshot(image)
-        x, y, hints = find_relevant_data(position_image, hint_image)
+        x, y, hints = find_relevant_data(position_image, hint_image, 0)
 
         print(FROM_FORMAT.format(x, y))
 
