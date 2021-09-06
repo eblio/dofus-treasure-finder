@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import tkinter as tk
 import tkinter.ttk as ttk
 import api
@@ -73,8 +75,7 @@ class App(tk.Tk):
             ta = time.perf_counter()
 
             image = api.screenshot_window(window_handler)
-            position_image, hint_image = api.process_screenshot(image)
-            x, y, hints = api.find_relevant_data(position_image, hint_image, api.WORLD_TO_ID[self.world_select.get()])
+            x, y, hints = api.find_relevant_data(image, api.WORLD_TO_ID[self.world_select.get()])
 
             tb = time.perf_counter()
 
@@ -89,10 +90,10 @@ class App(tk.Tk):
                     self.change_result(direction, NOTHING_HERE)
 
             self.change_info(TIME_FORMAT.format(tb - ta))
-
+        except IndexError:
+            self.change_from('Impossible de lire la position.')
         except:
-            e = sys.exc_info()
-            self.change_from('Aucune solution : ' + str(e))
+            self.change_from('Aucune solution.')
 
 
     def start(self):
