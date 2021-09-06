@@ -8,6 +8,7 @@ import re
 import data
 import requests
 import json
+import traceback
 from PIL import ImageOps
 from ctypes import windll
 from fuzzywuzzy import fuzz
@@ -23,14 +24,30 @@ DIRECTIONS = ['top', 'bottom', 'left', 'right']
 DIRECTIONS_SIGLE = {'top': '^', 'bottom': 'v', 'left': '<', 'right': '>'}
 FROM_FORMAT = 'Depuis [{},{}]'
 TO_FORMAT = '{} à {} case en [{},{}]'
-RATIO_TRESHOLD = 80
-INTENSITY_TRESHOLD = 130
+RATIO_TRESHOLD = 65
+POSITION_TRESHOLDS = [130, 140, 150, 160, 170, 180, 190]
+HINT_TRESHOLD = 130
 MIN_TEXT_SIZE = 2
 WORLD_TO_ID = {'Monde des Douze': 0, 'Village de la canopée': 2}
 
-black_n_white = lambda x : 255 if x > INTENSITY_TRESHOLD else 0
-sufficient_length = lambda x: len(x) > MIN_TEXT_SIZE
 re_coords = re.compile('(-?[0-9]+,-?[0-9]+)')
+
+###
+# Filter functions
+###
+
+def black_n_white(treshold):
+    '''
+    Returns a function that determines whether a pixel should be white or black.
+    '''
+    return lambda i : 255 if i > treshold else 0
+
+
+def sufficient_length(t):
+    '''
+    Determines whether the length of the text is sufficient to be considered valid.
+    '''
+    return len(t) > MIN_TEXT_SIZE
 
 ###
 # dofus-map.com functions
@@ -150,23 +167,6 @@ def screenshot_window(window_handler):
 # Use case specific functions
 ###
 
-def process_screenshot(image):
-    '''
-    Processes the screenshot to keep the interesting parts.
-    '''
-    h = image.height
-    w = image.width
-
-    # Crop and filter
-    position_image = ImageOps.invert(image.crop((0, 0, w / 4, h / 10)).convert('L').point(black_n_white, mode='1').convert('RGB'))
-    hint_image = image.crop((3 * w / 4, 0, w, h / 3)).convert('L').point(black_n_white, mode='1').convert('RGB')
-
-    # position_image.save('./test-images/pos.png')
-    # hint_image.save('./test-images/hint.png')
-
-    return position_image, hint_image
-
-
 def request_hints(x, y, direction, world):
     '''
     Requests the hints through dofus-map and format them.
@@ -197,19 +197,45 @@ def find_best_hint(hint, hints):
     return best_hint_data
 
 
-def find_relevant_data(position_image, hint_image, world):
+def find_position(image):
     '''
-    Finds the relevant data (position and hint).
+    Processes the window screenshot to extract the coordinates.
     '''
+    h = image.height
+    w = image.width
 
-    # Find the text using OCR
-    pos_texts = image_to_text(position_image).split('\n')
-    hint_texts = image_to_text(hint_image).split('\n')
+    # Crop the image
+    position_image = image.crop((0, 0, w / 4, h / 10)).convert('L')
 
-    # Filter to get the position
-    pos_texts = list(filter(sufficient_length, pos_texts))
-    pos_texts = list(filter(re_coords.match, pos_texts))[0].split(',')
+    # Iterate through the possible tresholds to find the text
+    pos_texts = []
+
+    for treshold in POSITION_TRESHOLDS:
+        temp_image = ImageOps.invert(position_image.point(black_n_white(treshold), mode='1').convert('RGB'))
+
+        pos_texts = image_to_text(temp_image).split('\n')
+        pos_texts = list(filter(sufficient_length, pos_texts))
+        pos_texts = list(filter(re_coords.match, pos_texts))
+
+        if len(pos_texts) >= 1:
+            break
+    
+    # Extract the information
+    pos_texts = pos_texts[0].split(',')
     x, y = int(pos_texts[0]), int(pos_texts[1])
+
+    return x, y
+    
+
+def find_hints(image, x, y, world):
+    '''
+    Processes the window screenshot to extract the hints.
+    '''
+    h = image.height
+    w = image.width
+
+    hint_image = image.crop((3 * w / 4, 0, w, h / 2.8)).convert('L').point(black_n_white(HINT_TRESHOLD), mode='1').convert('RGB')
+    hint_texts = image_to_text(hint_image).split('\n')
 
     # Filter to remove garbage data
     hint_texts = list(filter(sufficient_length, hint_texts))
@@ -228,7 +254,17 @@ def find_relevant_data(position_image, hint_image, world):
                 best_hint = temp_best_hint
 
         best_hints[direction] = best_hint
-        
+
+    return best_hints
+
+
+def find_relevant_data(image, world):
+    '''
+    Finds the relevant data (position and hint).
+    '''
+    x, y = find_position(image)
+    best_hints = find_hints(image, x, y, world)
+
     return x, y, best_hints
 
 
@@ -238,8 +274,7 @@ def process_window(window_handler):
     '''
     try:
         image = screenshot_window(window_handler)
-        position_image, hint_image = process_screenshot(image)
-        x, y, hints = find_relevant_data(position_image, hint_image, 0)
+        x, y, hints = find_relevant_data(image, 0)
 
         print(FROM_FORMAT.format(x, y))
 
@@ -247,12 +282,10 @@ def process_window(window_handler):
             hint = hints[direction]
             
             if hint is not None:
-                print(TO_FORMAT.format(
-                    DIRECTIONS_SIGLE[direction], hint['n'], hint['d'], hint['x'], hint['y']))
-        
+                print(DIRECTIONS_SIGLE[direction] + ' ' + TO_FORMAT.format(hint['n'], hint['d'], hint['x'], hint['y']))
     except:
-        e = sys.exc_info()
-        print("No results founded : " + str(e))
+        print("No results found : ")
+        traceback.print_exc()
 
 
 ###
