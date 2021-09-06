@@ -205,7 +205,7 @@ def find_position(image):
     w = image.width
 
     # Crop the image
-    position_image = image.crop((0, 0, w / 4, h / 10)).convert('L')
+    position_image = image.crop((0, 0, w / 4, h / 3)).convert('L')
 
     # Iterate through the possible tresholds to find the text
     pos_texts = []
