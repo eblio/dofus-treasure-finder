@@ -133,3 +133,6 @@ test-images/
 
 # Pre-build folder
 tesseract/
+
+# Webdriver files
+webdriver/
