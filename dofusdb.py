@@ -41,6 +41,7 @@ class DofusDB:
         self.driver = Chrome(service=service, desired_capabilities=capabilities)
         self.wait = WebDriverWait(self.driver, 2)
         self.driver.get(SITE_URL)
+        self.needs_refresh = {}
 
     
     @staticmethod
@@ -92,6 +93,11 @@ class DofusDB:
         """
         Get the elements in a dirtection from a position.
         """
+        id = x * y * d.value
+        if id in self.needs_refresh:
+            self.driver.refresh()
+        else:
+            self.needs_refresh[id] = True
 
         # Prepare the page
         DofusDB.clear_and_set_field(self.driver.find_element(By.XPATH, X_PATH), x)

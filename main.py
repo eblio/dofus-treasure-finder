@@ -82,9 +82,13 @@ class App(tk.Tk):
         image = api.screenshot_window(window_handler)
         text = api.find_hints(image)
 
+        print(text, hints)
+
         valid_hints = api.match_to_hints(text, hints)
 
-        if len(valid_hints) > 1:
+        print(valid_hints)
+
+        if len(valid_hints) >= 1:
             h = valid_hints[len(valid_hints) - 1]
             
             if h['x'] != x:
